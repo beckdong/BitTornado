@@ -1,4 +1,21 @@
+import collections
 import urllib
+
+
+def normalize(arg, targettype, targetmap):
+    """Coerce arg to targettype, optionally using targetmap to provide
+    a conversion functions for source types."""
+    argtype = type(arg)
+    if targettype is not None and argtype is not targettype:
+        if isinstance(targettype, tuple) and \
+                isinstance(arg, collections.Iterable):
+            return tuple(normalize(subarg, subtype, targetmap)
+                         for subarg, subtype in zip(arg, targettype))
+        elif targetmap is not None and argtype in targetmap:
+            return targetmap[argtype](arg)
+        else:
+            return targettype(arg)
+    return arg
 
 
 class TypedList(list):
@@ -14,40 +31,26 @@ class TypedList(list):
         return True
 
     def append(self, val):
-        if self.valtype is not None and type(val) is not self.valtype:
-            if self.valmap is not None and type(val) in self.valmap:
-                val = self.valmap[type(val)](val)
-                if not isinstance(val, self.valtype):
-                    raise TypeError('Values must be coercible to type '
-                                    '{!r}'.format(self.valtype))
-            else:
-                try:
-                    val = self.valtype(val)
-                except TypeError:
-                    raise TypeError('Values must be of type {!r}'.format(
-                                    self.valtype))
+        try:
+            val = normalize(val, self.valtype, self.valmap)
+        except TypeError:
+            raise TypeError('Values must be coercible to type '
+                            '{!r}'.format(self.valtype))
 
         if self.valconst(val):
             super(TypedList, self).append(val)
         elif self.error:
             raise ValueError('Value rejected: {}'.format(val))
 
-    def __setitem__(self, key, val):
-        if self.valtype is not None and type(val) is not self.valtype:
-            if self.valmap is not None and type(val) in self.valmap:
-                val = self.valmap[type(val)](val)
-                if not isinstance(val, self.valtype):
-                    raise TypeError('Values must be coercible to type '
-                                    '{!r}'.format(self.valtype))
-            else:
-                try:
-                    val = self.valtype(val)
-                except TypeError:
-                    raise TypeError('Values must be of type {!r}'.format(
-                                    self.valtype))
+    def __setitem__(self, index, val):
+        try:
+            val = normalize(val, self.valtype, self.valmap)
+        except TypeError:
+            raise TypeError('Values must be coercible to type '
+                            '{!r}'.format(self.valtype))
 
         if self.valconst(val):
-            super(TypedList, self).__setitem__(key, val)
+            super(TypedList, self).__setitem__(index, val)
         elif self.error:
             raise ValueError('Value rejected: {}'.format(val))
 
@@ -88,24 +91,14 @@ class TypedDict(dict):
             self[k] = v
 
     def __setitem__(self, key, val):
-        if self.keytype is not None and type(key) is not self.keytype:
-            if self.keymap is not None and type(key) in self.keymap:
-                key = self.keymap[type(key)](key)
-            else:
-                try:
-                    key = self.keytype(key)
-                except TypeError:
-                    raise TypeError('Keys must be of type {!r}'.format(
-                                    self.keytype))
-        if self.valtype is not None and type(val) is not self.valtype:
-            if self.valmap is not None and type(val) in self.valmap:
-                val = self.valmap[type(val)](val)
-            else:
-                try:
-                    val = self.valtype(val)
-                except TypeError:
-                    raise TypeError('Values must be of type {!r}'.format(
-                                    self.valtype))
+        try:
+            key = normalize(key, self.keytype, self.keymap)
+        except TypeError:
+            raise TypeError('Keys must be of type {!r}'.format(self.keytype))
+        try:
+            val = normalize(val, self.valtype, self.valmap)
+        except TypeError:
+            raise TypeError('Values must be of type {!r}'.format(self.keytype))
 
         if self.typemap is not None and key in self.typemap and \
                 type(val) is not self.typemap[key]:
