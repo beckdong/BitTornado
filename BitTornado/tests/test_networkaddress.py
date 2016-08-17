@@ -1,8 +1,9 @@
 import unittest
 import random
 
-from BitTornado.Network.NetworkAddress import Address, IP, IPv4, IPv6, \
-    AddressRange, Subnet, AddrList, to_ipv4, is_valid_ip
+from BitTornado.Types import Address, IP, IPv4, IPv6
+from BitTornado.Network.NetworkAddress import AddressRange, Subnet, AddrList, \
+    to_ipv4, is_valid_ip
 
 IPV4MAX = 0xffffffff
 IPV6MAX = 0xffffffffffffffffffffffffffffffff

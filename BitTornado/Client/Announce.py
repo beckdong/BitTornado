@@ -10,8 +10,7 @@ import base64
 import threading
 from BitTornado.Meta.bencode import bdecode
 from BitTornado.Meta.TypedCollections import TypedDict, TypedList, QueryDict
-from BitTornado.Network.NetworkAddress import IPv4, IPv6
-from BitTornado.Types import Port, Infohash, PeerID
+from BitTornado.Types import Port, Infohash, PeerID, IPv4, IPv6
 from BitTornado.Network.Stream import SharedStream
 
 
