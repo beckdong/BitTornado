@@ -167,3 +167,37 @@ class OrderedSet(set):
             i = sorted(self)[n]
         self.remove(i)
         return i
+
+
+class DictSet(TypedDict, collections.MutableSet):
+    valtype = bool
+
+    @classmethod
+    def _normalize_seq(cls, seq):
+        if seq is None:
+            return None
+
+        if isinstance(seq, collections.Mapping):
+            return seq
+        if isinstance(seq, collections.Iterable):
+            vals = list(seq)
+            # Empty
+            if not vals:
+                return None
+            # Sequence of pairs
+            if all((isinstance(vals[0], collections.Sequence),
+                    not isinstance(vals[0], (str, bytes)),
+                    len(vals[0]) == 2)):
+                return vals
+            # Treat as set elements
+            return ((element, True) for element in seq)
+        raise ValueError
+
+    def __init__(self, mapping=None, **kwargs):
+        super(DictSet, self).__init__(self._normalize_seq(mapping), **kwargs)
+
+    def add(self, element):
+        self[element] = True
+
+    def discard(self, element):
+        TypedDict.pop(self, element, None)
