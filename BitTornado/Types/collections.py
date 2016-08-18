@@ -155,3 +155,15 @@ class QueryDict(TypedDict):
                 val = str(int(val))
             parts.append('{:s}={:s}'.format(key, urllib.parse.quote(val)))
         return '&'.join(parts)
+
+
+class OrderedSet(set):
+    def pop(self, n=0):
+        if n == 0:
+            i = min(self)
+        elif n == -1:
+            i = max(self)
+        else:
+            i = sorted(self)[n]
+        self.remove(i)
+        return i
