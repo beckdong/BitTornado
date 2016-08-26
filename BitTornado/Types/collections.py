@@ -236,15 +236,11 @@ class QueryDict(TypedDict):
 
 
 class OrderedSet(set):
+    """A set that permits popping a specific element"""
     def pop(self, n=0):
-        if n == 0:
-            i = min(self)
-        elif n == -1:
-            i = max(self)
-        else:
-            i = sorted(self)[n]
-        self.remove(i)
-        return i
+        x = min(self) if n == 0 else max(self) if n == -1 else sorted(self)[n]
+        self.remove(x)
+        return x
 
 
 class DictSet(TypedDict, collections.MutableSet):
