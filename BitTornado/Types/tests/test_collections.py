@@ -1,6 +1,8 @@
 import unittest
+import random
 
-from ..collections import TypedList, TypedDict, DictSet
+from ..collections import TypedList, TypedDict, DictSet, OrderedSet
+from ...Meta.bencode import bencode, bdecode
 
 
 class APITest(object):
@@ -96,7 +98,7 @@ class TypedDictAPITest(CopyAPITest, unittest.TestCase):
     thisclass = TypedDict
 
 
-class DictSetAPITest(CopyAPITest, unittest.TestCase):
+class DictSetTest(CopyAPITest, unittest.TestCase):
     baseclass = set
     thisclass = DictSet
     initargs = ("abcdef",)
@@ -123,3 +125,53 @@ class DictSetAPITest(CopyAPITest, unittest.TestCase):
                   ('intersection_update',           (comparator,),  {}),
                   ('update',                        (comparator,),  {}),
                   ]
+
+    def test_bencoding(self):
+        orig = DictSet(('a', 'b', 'c'))
+        self.assertEqual(bencode(orig), b'd1:ai1e1:bi1e1:ci1ee')
+        self.assertEqual(DictSet(bdecode(bencode(orig))), orig)
+
+    def test_comparisons(self):
+        # Equality should imply the following:
+        self.assertTrue(self.this <= self.base)
+        self.assertTrue(self.this >= self.base)
+        self.assertTrue(self.base <= self.this)
+        self.assertTrue(self.base >= self.this)
+
+        tcopy = self.this.copy()
+        x = tcopy.pop()
+
+        self.assertTrue(x not in tcopy)  # value removed
+        self.assertTrue(x in self.this)  # original unaffected
+
+        # Test comparisons in DictSet
+        self.assertEqual(len(tcopy), len(self.base) - 1)
+        self.assertTrue(tcopy < self.this)
+        self.assertTrue(tcopy <= self.this)
+        self.assertTrue(self.this >= tcopy)
+        self.assertTrue(self.this > tcopy)
+
+        bcopy = self.base.copy()
+        bcopy.pop()
+
+        # Check that comparisons with normal sets work as expected
+        self.assertTrue(self.base > tcopy)
+        self.assertTrue(self.base >= tcopy)
+        self.assertTrue(bcopy < self.this)
+        self.assertTrue(bcopy <= self.this)
+
+
+class OrderedSetTest(unittest.TestCase):
+    def test_orderedpop(self):
+        """Test that removing arbitrary values from an ordered set is
+        the same as removing from a sorted list"""
+        for _ in range(10):
+            vals = random.sample(range(100), 10)
+            oset = OrderedSet(vals)
+            sorted_vals = sorted(vals)
+
+            while len(oset) > 0:
+                n = random.randrange(len(oset))
+                oset.pop(n)
+                sorted_vals.pop(n)
+                self.assertEqual(sorted(oset), sorted_vals)
